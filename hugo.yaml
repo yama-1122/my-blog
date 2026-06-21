@@ -1,0 +1,40 @@
+baseURL: "https://example.github.io/my-blog/"
+defaultContentLanguage: ja
+locale: ja
+title: My Blog
+theme: PaperMod
+
+params:
+  env: production
+  defaultTheme: auto
+  showShareButtons: true
+  showReadingTime: true
+  showPostNavLinks: true
+  showBreadCrumbs: true
+  showToc: true
+  socialIcons:
+    - name: twitter
+      url: ""
+    - name: github
+      url: ""
+
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 10
+    - identifier: archives
+      name: Archives
+      url: /archives/
+      weight: 20
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 30
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
