@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新規ブログ投稿</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #1d1e20;
+    --card: #2a2b2e;
+    --text: #e8e8e8;
+    --muted: #999;
+    --accent: #4dabf7;
+    --border: #444;
+    --input-bg: #333;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f5f5;
+      --card: #fff;
+      --text: #222;
+      --muted: #666;
+      --accent: #1a73e8;
+      --border: #ddd;
+      --input-bg: #fff;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding: 16px;
+  }
+  .container { max-width: 600px; margin: 0 auto; }
+  h1 {
+    font-size: 1.3rem;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 12px 0;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    margin-top: 14px;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
+  .tags-hint { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn:active { opacity: 0.8; }
+  .preview-box {
+    margin-top: 20px;
+    padding: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: none;
+  }
+  .preview-box pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .preview-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 12px;
+    padding: 0;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📝 新規ブログ投稿</h1>
+
+  <label for="title">タイトル</label>
+  <input type="text" id="title" placeholder="記事のタイトル">
+
+  <label for="tags">タグ（カンマ区切り）</label>
+  <input type="text" id="tags" placeholder="サッカー, 日記, 技術">
+  <div class="tags-hint">例: サッカー, W杯, 日本代表</div>
+
+  <label for="description">概要（1〜2文）</label>
+  <input type="text" id="description" placeholder="記事の簡単な説明">
+
+  <label for="body">本文（Markdown）</label>
+  <textarea id="body" placeholder="## 見出し&#10;&#10;ここに本文を書きます..."></textarea>
+
+  <button class="btn" onclick="submitPost()">GitHubで投稿する →</button>
+
+  <button class="preview-toggle" onclick="togglePreview()">▶ プレビュー表示</button>
+  <div class="preview-box" id="preview">
+    <pre id="preview-text"></pre>
+  </div>
+
+  <div class="footer">
+    トークン不要・データはGitHubに直接送られます<br>
+    このページに入力内容は保存されません
+  </div>
+</div>
+
+<script>
+function getToday() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function toSlug(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w　-鿿＀-￯]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 60) || 'new-post';
+}
+
+function buildMarkdown() {
+  const title = document.getElementById('title').value.trim();
+  const tags = document.getElementById('tags').value.trim();
+  const desc = document.getElementById('description').value.trim();
+  const body = document.getElementById('body').value;
+
+  const tagList = tags
+    ? tags.split(/[,、]/).map(t => `"${t.trim()}"`).filter(t => t !== '""').join(', ')
+    : '';
+
+  let md = '---\n';
+  md += `title: "${title}"\n`;
+  md += `date: ${getToday()}\n`;
+  md += 'draft: false\n';
+  if (tagList) md += `tags: [${tagList}]\n`;
+  if (desc) md += `description: "${desc}"\n`;
+  md += '---\n\n';
+  md += body;
+  return md;
+}
+
+function getFilename() {
+  const title = document.getElementById('title').value.trim();
+  return toSlug(title) + '.md';
+}
+
+function submitPost() {
+  const title = document.getElementById('title').value.trim();
+  if (!title) { alert('タイトルを入力してください'); return; }
+
+  const md = buildMarkdown();
+  const filename = getFilename();
+
+  const url = 'https://github.com/yama-1122/my-blog/new/main/content/posts'
+    + '?filename=' + encodeURIComponent(filename)
+    + '&value=' + encodeURIComponent(md);
+
+  window.open(url, '_blank');
+}
+
+function togglePreview() {
+  const box = document.getElementById('preview');
+  const btn = document.querySelector('.preview-toggle');
+  if (box.style.display === 'block') {
+    box.style.display = 'none';
+    btn.textContent = '▶ プレビュー表示';
+  } else {
+    document.getElementById('preview-text').textContent = buildMarkdown();
+    box.style.display = 'block';
+    btn.textContent = '▼ プレビュー非表示';
+  }
+}
+</script>
+</body>
+</html>
